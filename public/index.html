@@ -1,43 +1,380 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <link rel="icon" href="%PUBLIC_URL%/favicon.ico" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="theme-color" content="#000000" />
-    <meta
-      name="description"
-      content="Web site created using create-react-app"
-    />
-    <link rel="apple-touch-icon" href="%PUBLIC_URL%/logo192.png" />
-    <!--
-      manifest.json provides metadata used when your web app is installed on a
-      user's mobile device or desktop. See https://developers.google.com/web/fundamentals/web-app-manifest/
-    -->
-    <link rel="manifest" href="%PUBLIC_URL%/manifest.json" />
-    <!--
-      Notice the use of %PUBLIC_URL% in the tags above.
-      It will be replaced with the URL of the `public` folder during the build.
-      Only files inside the `public` folder can be referenced from the HTML.
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Competitor Collaboration Research Tool</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+  <style>
+    body { padding-top: 20px; font-family: 'Inter', sans-serif; } /* Added Inter font */
+    .container { max-width: 1140px; }
+    .card { border-radius: 0.5rem; } /* Added rounded corners */
+    .competitor-input { display: flex; margin-bottom: 10px; }
+    .competitor-input input { flex-grow: 1; margin-right: 10px; border-radius: 0.375rem; } /* Rounded input */
+    .competitor-input button { border-radius: 0.375rem; } /* Rounded button */
+    .results-table { margin-top: 30px; font-size: 0.9rem; border-radius: 0.5rem; overflow: hidden; } /* Rounded table container */
+    .results-table th, .results-table td { vertical-align: middle; padding: 0.75rem; }
+    .spinner-border-sm { width: 1rem; height: 1rem; }
+    .progress { height: 25px; font-size: 0.9rem; border-radius: 0.375rem; } /* Rounded progress bar */
+    .progress-bar { border-radius: 0.375rem; }
+    #resultsContainer th { white-space: nowrap; }
+    .evidence-link { display: inline-block; max-width: 250px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; vertical-align: bottom; }
+    .notes-cell { max-width: 300px; white-space: normal; word-wrap: break-word; }
+    .form-check-input { border-radius: 0.25em; } /* Slightly rounded checkboxes */
+    .btn { border-radius: 0.375rem; } /* Rounded buttons */
+    /* Add Inter font */
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1 class="text-center mb-4 fw-bold">Competitor Collaboration Research Tool</h1>
 
-      Unlike "/favicon.ico" or "favicon.ico", "%PUBLIC_URL%/favicon.ico" will
-      work correctly both with client-side routing and a non-root public URL.
-      Learn how to configure a non-root public URL by running `npm run build`.
-    -->
-    <title>React App</title>
-  </head>
-  <body>
-    <noscript>You need to enable JavaScript to run this app.</noscript>
-    <div id="root"></div>
-    <!--
-      This HTML file is a template.
-      If you open it directly in the browser, you will see an empty page.
+    <div class="card mb-4 shadow-sm">
+      <div class="card-body p-4">
+        <form id="researchForm">
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label for="targetCompany" class="form-label fw-medium">Target Company (to research)</label>
+              <input type="text" class="form-control" id="targetCompany" placeholder="e.g., Google" required>
+            </div>
+            <div class="col-md-6">
+              <label for="customerCompany" class="form-label fw-medium">Your Company (Optional Context)</label>
+              <input type="text" class="form-control" id="customerCompany" placeholder="e.g., My Startup Inc.">
+            </div>
+          </div>
 
-      You can add webfonts, meta tags, or analytics to this file.
-      The build step will place the bundled scripts into the <body> tag.
+          <div class="mt-3">
+            <label class="form-label fw-medium">Competitors List</label>
+            <div id="competitorsList">
+              <div class="competitor-input input-group mb-2">
+                <input type="text" class="form-control" placeholder="e.g., Microsoft" required>
+                <button type="button" class="btn btn-outline-danger remove-competitor" title="Remove Competitor"><i class="bi bi-trash"></i></button>
+              </div>
+            </div>
+            <button type="button" class="btn btn-sm btn-outline-secondary mt-1" id="addCompetitor"><i class="bi bi-plus-lg"></i> Add Competitor</button>
+          </div>
 
-      To begin the development, run `npm start` or `yarn start`.
-      To create a production bundle, use `npm run build` or `yarn build`.
-    -->
-  </body>
+          <div class="mt-3">
+            <label class="form-label fw-medium">Search Sources</label>
+            <div class="row row-cols-2 row-cols-sm-3 row-cols-lg-5 g-2">
+              <div class="col"><div class="form-check form-switch"><input class="form-check-input" type="checkbox" id="sourceNews" checked><label class="form-check-label" for="sourceNews">News</label></div></div>
+              <div class="col"><div class="form-check form-switch"><input class="form-check-input" type="checkbox" id="sourcePressReleases" checked><label class="form-check-label" for="sourcePressReleases">Press Releases</label></div></div>
+              <div class="col"><div class="form-check form-switch"><input class="form-check-input" type="checkbox" id="sourceFinancialFilings" checked><label class="form-check-label" for="sourceFinancialFilings">Financial Filings</label></div></div>
+              <div class="col"><div class="form-check form-switch"><input class="form-check-input" type="checkbox" id="sourcePatents" checked><label class="form-check-label" for="sourcePatents">Patents</label></div></div>
+              <div class="col"><div class="form-check form-switch"><input class="form-check-input" type="checkbox" id="sourceSocialMedia" checked><label class="form-check-label" for="sourceSocialMedia">Social Media</label></div></div>
+            </div>
+          </div>
+
+          <div class="text-center mt-4">
+            <button type="submit" class="btn btn-primary btn-lg px-4" id="startResearchBtn">
+              <span id="searchButtonText">Start Research</span>
+              <span class="spinner-border spinner-border-sm d-none ms-2" id="searchSpinner" role="status" aria-hidden="true"></span>
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <div id="progressContainer" class="mb-4 d-none">
+       <div class="progress">
+           <div id="progressBar" class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 0%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">Researching...</div>
+       </div>
+    </div>
+
+
+    <div id="resultsContainer" class="d-none">
+      <hr class="my-4">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+         <h2 class="h4 fw-semibold">Research Results</h2>
+         <button class="btn btn-success" id="exportButton" disabled><i class="bi bi-file-earmark-spreadsheet"></i> Export CSV</button>
+      </div>
+      <div class="table-responsive shadow-sm" style="border-radius: 0.5rem;">
+        <table class="table table-striped table-bordered table-hover results-table mb-0">
+          <thead class="table-light">
+            <tr>
+              <th>Target</th>
+              <th>Competitor</th>
+              <th>Type</th>
+              <th>Impact</th>
+              <th>Source</th>
+              <th>Evidence Date</th>
+              <th>Evidence</th>
+              <th class="notes-cell">Notes/Context</th>
+            </tr>
+          </thead>
+          <tbody id="resultsTableBody">
+            <tr><td colspan="8" class="text-center text-muted py-4">No results yet. Start a research task above.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      // Get references to DOM elements
+      const researchForm = document.getElementById('researchForm');
+      const competitorsList = document.getElementById('competitorsList');
+      const addCompetitorBtn = document.getElementById('addCompetitor');
+      const resultsContainer = document.getElementById('resultsContainer');
+      const resultsTableBody = document.getElementById('resultsTableBody');
+      const exportButton = document.getElementById('exportButton');
+      const startResearchBtn = document.getElementById('startResearchBtn');
+      const searchButtonText = document.getElementById('searchButtonText');
+      const searchSpinner = document.getElementById('searchSpinner');
+      const progressContainer = document.getElementById('progressContainer');
+      const progressBar = document.getElementById('progressBar');
+
+      /**
+       * Adds a new competitor input field to the list.
+       */
+      function addCompetitorField() {
+        const div = document.createElement('div');
+        div.className = 'competitor-input input-group mb-2';
+        div.innerHTML = `
+          <input type="text" class="form-control" placeholder="Enter another competitor" required>
+          <button type="button" class="btn btn-outline-danger remove-competitor" title="Remove Competitor"><i class="bi bi-trash"></i></button>
+        `;
+        competitorsList.appendChild(div);
+         // Add remove listener specifically to the button within the new div
+         div.querySelector('.remove-competitor').addEventListener('click', handleRemoveCompetitor);
+      }
+
+      /**
+       * Handles removing a competitor input field.
+       * Prevents removing the last field.
+       * @param {Event} event - The click event.
+       */
+      function handleRemoveCompetitor(event) {
+          // Ensure we don't remove the last input field
+          if (competitorsList.querySelectorAll('.competitor-input').length > 1) {
+             event.target.closest('.competitor-input').remove();
+          } else {
+              alert('You must specify at least one competitor.');
+          }
+      }
+
+      // Add competitor button listener
+      addCompetitorBtn.addEventListener('click', addCompetitorField);
+
+      // Delegate event listener for removing competitors (handles existing and new fields)
+      competitorsList.addEventListener('click', function(e) {
+          if (e.target.closest('.remove-competitor')) {
+              handleRemoveCompetitor(e);
+          }
+      });
+
+
+      /**
+       * Handles the form submission to start the research process.
+       * @param {Event} event - The form submission event.
+       */
+      researchForm.addEventListener('submit', async function(event) {
+        event.preventDefault(); // Prevent default form submission
+        setLoadingState(true); // Update UI to show loading
+        // Clear previous results and hide table/export button
+        resultsTableBody.innerHTML = '<tr><td colspan="8" class="text-center text-muted py-4">Researching... Please wait. This may take a few minutes.</td></tr>';
+        resultsContainer.classList.remove('d-none'); // Show container with "Researching" message
+        exportButton.disabled = true; // Disable export button during research
+
+        // Gather form data
+        const targetCompany = document.getElementById('targetCompany').value.trim();
+        const customerCompany = document.getElementById('customerCompany').value.trim(); // Optional field
+        const competitors = Array.from(competitorsList.querySelectorAll('input'))
+                                 .map(input => input.value.trim())
+                                 .filter(name => name); // Filter out empty strings
+
+        // Gather selected search sources
+        const sources = {
+          news: document.getElementById('sourceNews').checked,
+          pressReleases: document.getElementById('sourcePressReleases').checked,
+          financialFilings: document.getElementById('sourceFinancialFilings').checked,
+          patents: document.getElementById('sourcePatents').checked,
+          socialMedia: document.getElementById('sourceSocialMedia').checked
+        };
+
+         // Basic validation
+         if (!targetCompany || competitors.length === 0) {
+             alert('Please provide a target company and at least one competitor.');
+             setLoadingState(false);
+             return;
+         }
+
+
+        // --- API Calls to Backend ---
+        try {
+           // Show and reset progress bar
+           updateProgress(10, 'Initializing research...', false, 'bg-info'); // Start with info color
+           progressContainer.classList.remove('d-none');
+
+           // Simulate progress slightly (real progress depends on backend timing)
+           // Note: For a true progress bar, the backend would need to send progress updates
+           updateProgress(30, 'Searching sources...');
+
+          // 2. Start the main research task by calling the backend API
+          const response = await fetch('/api/research', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ targetCompany, competitors, customerCompany, sources }) // Send data as JSON, including sources
+          });
+
+           updateProgress(70, 'Analyzing results...');
+
+          // Check if the API call was successful
+          if (!response.ok) {
+             // Try to parse error message from backend
+             let errorMsg = `Research failed with status: ${response.status}`;
+             try {
+                 const errorData = await response.json();
+                 errorMsg = errorData.error || errorMsg;
+             } catch (parseError) {
+                 // Ignore if response is not JSON
+             }
+             throw new Error(errorMsg); // Throw error to be caught below
+          }
+
+          // Parse the successful JSON response from the backend
+          const data = await response.json();
+          updateProgress(100, 'Research complete!', true, 'bg-success'); // Mark as complete with success color
+
+          // Display the received results
+          displayResults(data.results);
+
+        } catch (error) {
+          // Handle any errors during the API call or processing
+          console.error('Client-side Error:', error);
+          alert('An error occurred during research: ' + error.message);
+          // Display error message in the table
+          resultsTableBody.innerHTML = `<tr><td colspan="8" class="text-center text-danger py-4"><strong>Research failed:</strong> ${error.message}</td></tr>`;
+          resultsContainer.classList.remove('d-none'); // Ensure container is visible for error
+          // Update progress bar to show error state
+          updateProgress(100, 'Error Occurred', true, 'bg-danger');
+
+        } finally {
+          // This block runs regardless of success or error
+          setLoadingState(false); // Reset button state
+           // Hide progress bar after a delay (e.g., 3 seconds)
+           setTimeout(() => {
+              progressContainer.classList.add('d-none');
+              // Optionally reset progress bar visuals fully here if needed
+              // updateProgress(0, '', false);
+           }, 3000);
+        }
+      }); // End form submit listener
+
+
+       /**
+        * Updates the visual state of the progress bar.
+        * @param {number} percentage - The progress percentage (0-100).
+        * @param {string} text - The text to display on the progress bar.
+        * @param {boolean} [isComplete=false] - Whether the task is fully complete (affects animation).
+        * @param {string} [colorClass=''] - Optional Bootstrap background color class (e.g., 'bg-success', 'bg-danger').
+        */
+       function updateProgress(percentage, text, isComplete = false, colorClass = '') {
+           progressBar.style.width = percentage + '%';
+           progressBar.textContent = text;
+           progressBar.setAttribute('aria-valuenow', percentage);
+
+           // Manage animation and color classes
+           progressBar.classList.remove('bg-info', 'bg-success', 'bg-danger'); // Remove previous colors
+           if (colorClass) {
+               progressBar.classList.add(colorClass);
+           }
+           if (isComplete) {
+               progressBar.classList.remove('progress-bar-animated');
+           } else {
+               progressBar.classList.add('progress-bar-animated');
+           }
+       }
+
+      /**
+       * Toggles the loading state visuals for the submit button.
+       * @param {boolean} isLoading - True to show loading state, false otherwise.
+       */
+      function setLoadingState(isLoading) {
+        if (isLoading) {
+          startResearchBtn.disabled = true; // Disable button
+          searchButtonText.textContent = 'Researching...'; // Change text
+          searchSpinner.classList.remove('d-none'); // Show spinner
+        } else {
+          startResearchBtn.disabled = false; // Enable button
+          searchButtonText.textContent = 'Start Research'; // Restore text
+          searchSpinner.classList.add('d-none'); // Hide spinner
+        }
+      }
+
+      /**
+       * Renders the research results into the HTML table.
+       * @param {Array} results - An array of result objects from the backend.
+       */
+      function displayResults(results) {
+         resultsTableBody.innerHTML = ''; // Clear previous content (like "loading" or old results)
+
+        // Handle case where no results are found
+        if (!results || results.length === 0) {
+          resultsTableBody.innerHTML = '<tr><td colspan="8" class="text-center text-muted py-4">No collaborations found based on the current criteria.</td></tr>';
+          resultsContainer.classList.remove('d-none'); // Show table container
+          exportButton.disabled = true; // Disable export if no results
+          return;
+        }
+
+        // Populate table rows with results data
+         results.forEach(result => {
+             const row = document.createElement('tr');
+             // Safely access nested evidence data
+             const primaryEvidence = result.evidenceLinks && result.evidenceLinks[0] ? result.evidenceLinks[0] : {};
+
+             // Determine badge class based on impact level
+            let badgeClass = 'bg-secondary'; // Default/Low
+            if (result.impactLevel?.toLowerCase() === 'medium') badgeClass = 'bg-warning text-dark';
+            else if (result.impactLevel?.toLowerCase() === 'high') badgeClass = 'bg-danger';
+
+             // Sanitize potentially unsafe content before inserting (basic example)
+             const sanitize = (str) => {
+                 const temp = document.createElement('div');
+                 temp.textContent = str || ''; // Use textContent to prevent HTML injection
+                 return temp.innerHTML; // Return the HTML-safe string
+             }
+
+             // Construct table row HTML
+             row.innerHTML = `
+                 <td>${sanitize(result.targetCompany)}</td>
+                 <td>${sanitize(result.competitor)}</td>
+                 <td>${sanitize(result.collaborationType)}</td>
+                 <td><span class="badge ${badgeClass} text-capitalize">${sanitize(result.impactLevel || 'Low')}</span></td>
+                 <td>${sanitize(result.sourceType)}</td>
+                 <td>${sanitize(primaryEvidence.date || 'N/A')}</td>
+                 <td>
+                    ${primaryEvidence.url && primaryEvidence.url !== '#' ?
+                       // Create a safe link
+                       `<a href="${encodeURI(primaryEvidence.url)}" target="_blank" class="evidence-link" title="${sanitize(primaryEvidence.title)}">${sanitize(primaryEvidence.title || 'Link')} <i class="bi bi-box-arrow-up-right"></i></a>` :
+                       sanitize(primaryEvidence.title || 'N/A')
+                    }
+                    <br><small class="text-muted d-block mt-1">Source: ${sanitize(primaryEvidence.source)}</small>
+                 </td>
+                 <td class="notes-cell">${sanitize(result.notes)}</td>
+             `;
+             resultsTableBody.appendChild(row); // Add the row to the table body
+         });
+
+         resultsContainer.classList.remove('d-none'); // Make the results container visible
+         exportButton.disabled = false; // Enable the export button
+      }
+
+
+      // Export button listener - triggers download via backend endpoint
+      exportButton.addEventListener('click', function() {
+        // Simple navigation to the export endpoint triggers the download
+        // Note: The backend /api/export endpoint needs to be fully implemented
+        // to generate and send the CSV data based on the last research results.
+        window.location.href = '/api/export';
+      });
+
+    }); // End DOMContentLoaded listener
+  </script>
+</body>
 </html>
