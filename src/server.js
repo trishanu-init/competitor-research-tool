@@ -4,9 +4,8 @@ const path = require('path');
 const {
   NewsScraperModule,
   YahooFinanceScraperModule,
-  GoogleRSSNews, // Import the new GoogleRSSNews module
-  // Add other modules here if you create them
-} = require('./ScrapingModule'); // Ensure the path is correct
+  GoogleRSSNews,
+} = require('./ScrapingModule');
 
 const app = express();
 const port = 3000;
@@ -16,21 +15,20 @@ app.use(express.json());
 
 app.use(express.static(path.join(__dirname, '../public')));
 
-// Initialize scraper modules
-const newsScraper = new NewsScraperModule(); // For web scraping (Google News Search, Yahoo Finance Search, MarketWatch)
-const yahooRss = new YahooFinanceScraperModule(); // For Yahoo Finance RSS
-const googleRss = new GoogleRSSNews(); // For Google News RSS
+const newsScraper = new NewsScraperModule(); 
+const yahooRss = new YahooFinanceScraperModule();
+const googleRss = new GoogleRSSNews();
 
 let lastResearchResults = [];
 
-// API endpoint for research
+// API endpoint
 app.post('/api/research', async (req, res) => {
   console.log('Received research request');
   const {
     targetCompany,
     competitors,
-    customerCompany, // Optional
-    sources // Receive the sources object from the frontend
+    customerCompany, 
+    sources 
   } = req.body;
 
   if (!targetCompany || !competitors || !Array.isArray(competitors) || competitors.length === 0) {
@@ -45,23 +43,23 @@ app.post('/api/research', async (req, res) => {
     console.log(`Researching collaboration between ${targetCompany} and ${competitor}`);
 
     try {
-      // Conditionally call scraper modules based on selected sources
-      if (sources.gnews) { // Check if Google News (Recent/Web) is selected
+      
+      if (sources.gnews) { 
         console.log(`Searching Google News (Web) for ${targetCompany} and ${competitor}`);
         const newsArticles = await newsScraper.searchAllNewsSources(targetCompany, competitor);
         const processedNews = newsArticles.map(article => ({
           targetCompany: targetCompany,
           competitor: competitor,
           collaborationType: 'Potential Partnership/Collaboration',
-          impactLevel: 'Medium', // Default or determine based on content
-          sourceType: article.source, // Use the source name from the module
+          impactLevel: 'Medium', 
+          sourceType: article.source, 
           evidenceLinks: [{
             url: article.link,
             title: article.title,
             source: article.source,
             date: article.date
           }],
-          notes: `Found in ${article.source}: "${article.snippet}"` // Include source in notes
+          notes: `Found in ${article.source}: "${article.snippet}"` 
         }));
         allResults = allResults.concat(processedNews);
       } else {
@@ -69,15 +67,15 @@ app.post('/api/research', async (req, res) => {
       }
 
 
-      if (sources.yahooRss) { // Check if Yahoo Finance RSS is selected
+      if (sources.yahooRss) { 
         console.log(`Workspaceing Yahoo Finance RSS for ${targetCompany} and ${competitor}`);
         const yahooNewsArticles = await yahooRss.fetchNews(targetCompany, competitor);
         const processedYahooNews = yahooNewsArticles.map(article => ({
            targetCompany: targetCompany,
            competitor: competitor,
            collaborationType: 'Potential Partnership/Collaboration',
-           impactLevel: 'Medium', // Default or determine based on content
-           sourceType: article.source, // Specify source type
+           impactLevel: 'Medium', 
+           sourceType: article.source, 
            evidenceLinks: [{
              url: article.link,
              title: article.title,
@@ -91,24 +89,24 @@ app.post('/api/research', async (req, res) => {
           console.log(`Yahoo Finance RSS source not selected.`);
       }
 
-      if (sources.gnewsRss) { // Check if Google News (All Time/RSS) is selected
+      if (sources.gnewsRss) { 
         console.log(`Workspaceing Google News RSS for ${targetCompany} and ${competitor}`);
-        // Construct the Google News RSS URL dynamically for the query
+        
         const googleNewsRssUrl = `https://news.google.com/rss/search?hl=en-US&gl=US&ceid=US%3Aen&oc=11&q=%22${encodeURIComponent(targetCompany)}%22%20AND%20%22${encodeURIComponent(competitor)}%22`;
         const googleRssArticles = await googleRss.fetchNews(googleNewsRssUrl, targetCompany, competitor);
         const processedGoogleRssNews = googleRssArticles.map(article => ({
             targetCompany: targetCompany,
             competitor: competitor,
             collaborationType: 'Potential Partnership/Collaboration',
-            impactLevel: 'Medium', // Default or determine based on content
-            sourceType: article.source, // Specify source type
+            impactLevel: 'Medium', 
+            sourceType: article.source, 
             evidenceLinks: [{
                 url: article.link,
                 title: article.title,
                 source: article.source,
                 date: article.date
             }],
-            notes: `Found in ${article.source}: "${article.snippet}"` // Use snippet from Google RSS
+            notes: `Found in ${article.source}: "${article.snippet}"` 
         }));
         allResults = allResults.concat(processedGoogleRssNews);
       } else {
@@ -116,9 +114,7 @@ app.post('/api/research', async (req, res) => {
       }
 
 
-      // Add search from other modules here if needed
-
-      // Add a delay to avoid overwhelming sources
+      
       await new Promise(resolve => setTimeout(resolve, 3000 + Math.random() * 2000));
 
 
@@ -133,13 +129,13 @@ app.post('/api/research', async (req, res) => {
   console.log(`Research complete. Found ${allResults.length} results.`);
 
 
-  // Send the results back to the frontend
+  
   res.json({
     results: allResults
   });
 });
 
-// API endpoint to generate and download CSV
+// API endpoint for csv
 app.get('/api/export', (req, res) => {
   console.log('Export endpoint called.');
 

@@ -1,16 +1,11 @@
-// Assuming xml2js is installed (`npm install xml2js`)
 const xml2js = require('xml2js');
 const unirest = require('unirest');
 const cheerio = require('cheerio');
 
 // Cache mechanism
-const requestCache = new Map(); // Keep if needed elsewhere
+const requestCache = new Map(); 
 
-/**
- * News Scraper Module
- * Handles scraping of news sources (excluding RSS feeds now) for company collaboration information.
- * Uses unirest and cheerio.
- */
+//news from google news search
 class NewsScraperModule {
   constructor() {
     this.userAgents = [
@@ -20,31 +15,29 @@ class NewsScraperModule {
       'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/101.0.4951.54 Safari/537.36' // Added a common user agent
     ];
 
-    // News sources to search (web scraping only now)
+    
     this.newsSources = [{
-      name: 'Google News Search', // Web search
+      name: 'Google News Search', 
       searchUrl: (query) => `https://www.google.com/search?q=${encodeURIComponent(query)}&gl=us&tbm=nws`,
       selector: '.SoaBEf',
       titleSelector: 'div.n0jPhd',
-      snippetSelector: '.GI74Re', // Adjust if Google News changes layout
+      snippetSelector: '.GI74Re', 
       dateSelector: '.OSrXXb span',
       linkSelector: 'a',
       linkAttribute: 'href',
       linkPrefix: 'https://www.google.com'
     }, {
-      name: 'Yahoo Finance Search', // Renamed for clarity
+      name: 'Yahoo Finance Search', 
       searchUrl: (query) => `https://finance.yahoo.com/news/search?p=${encodeURIComponent(query)}`, // Adjusted search URL
-      selector: 'li.js-stream-content', // Selector for each news item
-      titleSelector: 'h3', // Selector for the title within the item
-      snippetSelector: 'p', // Selector for the snippet within the item
-      dateSelector: 'span[data-test="ContentMetaAttribute-timestamp"]', // Updated selector for the date/timestamp
-      linkSelector: 'h3 a', // Selector for the link within the title element
+      selector: 'li.js-stream-content', 
+      titleSelector: 'h3', 
+      snippetSelector: 'p', 
+      dateSelector: 'span[data-test="ContentMetaAttribute-timestamp"]', 
+      linkSelector: 'h3 a', 
       linkAttribute: 'href',
-      linkPrefix: 'https://finance.yahoo.com' // Assume relative links start with /
+      linkPrefix: 'https://finance.yahoo.com'
     },
-    // MarketWatch is kept but not configured for unirest in this modification.
-    // If you need MarketWatch with unirest, you would need to configure its selectors
-    // and handle its specific structure in a similar way.
+    
     {
       name: 'MarketWatch',
       searchUrl: (query) => `https://www.marketwatch.com/search?q=${encodeURIComponent(query)}&tab=All%20News`,
@@ -54,14 +47,11 @@ class NewsScraperModule {
       dateSelector: '.article__timestamp',
       linkSelector: '.article__headline a',
       linkAttribute: 'href',
-      linkPrefix: '' // MarketWatch uses full URLs
+      linkPrefix: ''
     }
     ];
   }
 
-  /**
-   * Get a random user agent to rotate for requests
-   */
   getRandomUserAgent() {
     return this.userAgents[Math.floor(Math.random() * this.userAgents.length)];
   }
@@ -83,10 +73,6 @@ class NewsScraperModule {
         return Promise.resolve([]);
       }
     });
-
-    // RSS feed searches are now handled by dedicated modules (GoogleRSSNews, YahooFinanceScraperModule)
-    // You will call those modules separately in your main application logic (e.g., index.js)
-
 
     const results = await Promise.allSettled(searchPromises);
     return results
@@ -218,11 +204,7 @@ class NewsScraperModule {
     }
   }
 }
-
-/**
- * YahooFinanceScraperModule
- * Handles scraping of Yahoo Finance RSS feeds for company collaboration information
- */
+// yahoo finance scraper module
 class YahooFinanceScraperModule {
   constructor() {
     this.userAgents = [
@@ -234,9 +216,6 @@ class YahooFinanceScraperModule {
     this.rssUrl = 'http://finance.yahoo.com/rss/topstories';
   }
 
-  /**
-   * Get a random user agent to rotate for requests
-   */
   getRandomUserAgent() {
     return this.userAgents[Math.floor(Math.random() * this.userAgents.length)];
   }
@@ -253,8 +232,8 @@ class YahooFinanceScraperModule {
       const response = await unirest
         .get(this.rssUrl)
         .headers({
-          "User-Agent": this.getRandomUserAgent(), // Use user rotation
-          "Accept": "application/xml, text/xml" // Request XML content
+          "User-Agent": this.getRandomUserAgent(),
+          "Accept": "application/xml, text/xml" 
         });
 
       if (response.error) {
@@ -270,7 +249,6 @@ class YahooFinanceScraperModule {
       const newsItems = result.rss.channel[0].item;
 
       const extractedNews = newsItems.map(item => {
-        // Based on the provided Yahoo Finance RSS structure
         const title = item.title ? item.title[0] : 'No Title';
         const link = item.link ? item.link[0] : '#';
         const pubDate = item.pubDate ? item.pubDate[0] : '';
@@ -282,17 +260,15 @@ class YahooFinanceScraperModule {
           link: link,
           date: pubDate,
           source: source,
-          // Yahoo Finance RSS does not have a separate snippet/description field in the provided structure
-          // We will use an empty string for snippet in this module
           snippet: ''
         };
       });
 
       console.log(`Found ${extractedNews.length} articles from Yahoo Finance RSS feed before filtering.`);
 
-      // Apply filtering: check if title contains both company names
+      
       const filteredNews = extractedNews.filter(article => {
-        // We primarily filter on the title as snippet is not available in this feed structure
+        
         const textToCheck = (article.title || '').toLowerCase();
         const isRelevant = textToCheck.includes(targetCompany.toLowerCase()) &&
           textToCheck.includes(competitor.toLowerCase());
@@ -310,10 +286,6 @@ class YahooFinanceScraperModule {
   }
 }
 
-/**
- * GoogleRSSNews Module
- * Handles fetching and filtering of news articles from Google News RSS feeds.
- */
 class GoogleRSSNews {
     constructor() {
         this.userAgents = [
@@ -322,13 +294,9 @@ class GoogleRSSNews {
             'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/92.0.4515.107 Safari/537.36',
             'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/101.0.4951.54 Safari/537.36' // Added a common user agent
         ];
-        // Note: The RSS feed URL needs to be generated based on the query
-        // This module will receive the specific RSS URL to fetch
     }
 
-    /**
-     * Get a random user agent to rotate for requests
-     */
+    // random user agent to rotate for requests
     getRandomUserAgent() {
         return this.userAgents[Math.floor(Math.random() * this.userAgents.length)];
     }
@@ -346,7 +314,7 @@ class GoogleRSSNews {
             const response = await unirest
                 .get(rssUrl)
                 .headers({
-                    "User-Agent": this.getRandomUserAgent(), // Use user rotation
+                    "User-Agent": this.getRandomUserAgent(), // user rotation
                     "Accept": "application/xml, text/xml" // Request XML content
                 });
 
@@ -367,12 +335,10 @@ class GoogleRSSNews {
                 const title = item.title ? item.title[0] : 'No Title';
                 const link = item.link ? item.link[0] : '#';
                 const pubDate = item.pubDate ? item.pubDate[0] : '';
-                // Google News RSS description contains HTML with links and source
-                // We use cheerio to extract text content from the HTML description
+                
                 let snippet = '';
                 if (item.description && item.description[0]) {
                     const $ = cheerio.load(item.description[0]);
-                    // Extract text from the body of the loaded HTML, clean up whitespace
                     snippet = $('body').text().trim().replace(/\s{2,}/g, ' ');
                 }
 
@@ -381,13 +347,13 @@ class GoogleRSSNews {
                     link: link,
                     date: pubDate,
                     snippet: snippet,
-                    source: item.source ? item.source[0]._ : 'Google News RSS' // Use source tag or a default
+                    source: item.source ? item.source[0]._ : 'Google News RSS'
                 };
             });
 
             console.log(`Found ${extractedNews.length} articles from Google News RSS feed before filtering.`);
 
-            // Apply filtering: check if title or snippet contains both company names
+            // apply filtering
             const filteredNews = extractedNews.filter(article => {
                 const textToCheck = `${(article.title || '')} ${(article.snippet || '')}`.toLowerCase();
                 const isRelevant = textToCheck.includes(targetCompany.toLowerCase()) &&
@@ -406,10 +372,8 @@ class GoogleRSSNews {
 }
 
 
-// Export all modules
 module.exports = {
   NewsScraperModule,
   YahooFinanceScraperModule,
-  GoogleRSSNews, // Add the new module here
-  // Other modules...
+  GoogleRSSNews,
 };

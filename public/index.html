@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Competitor Collaboration Research Tool</title>
+  <title>Spying Tool 🕵️ for Anapan AI</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
   <style>
@@ -29,7 +29,7 @@
 </head>
 <body>
   <div class="container">
-    <h1 class="text-center mb-4 fw-bold">Competitor Collaboration Research Tool</h1>
+    <h1 class="text-center mb-4 fw-bold">Spying Tool 🕵️ for Anapan AI</h1>
 
     <div class="card mb-4 shadow-sm">
       <div class="card-body p-4">
@@ -37,11 +37,11 @@
           <div class="row g-3">
             <div class="col-md-6">
               <label for="targetCompany" class="form-label fw-medium">Target Company (to research)</label>
-              <input type="text" class="form-control" id="targetCompany" placeholder="e.g., Google" required>
+              <input type="text" class="form-control" id="targetCompany" placeholder="e.g., Virgin Media" required>
             </div>
             <div class="col-md-6">
-              <label for="customerCompany" class="form-label fw-medium">Your Company (Optional Context)</label>
-              <input type="text" class="form-control" id="customerCompany" placeholder="e.g., My Startup Inc.">
+              <label for="customerCompany" class="form-label fw-medium">Client Company</label>
+              <input type="text" class="form-control" id="customerCompany" placeholder="e.g., Infosys">
             </div>
           </div>
 
@@ -49,7 +49,7 @@
             <label class="form-label fw-medium">Competitors List</label>
             <div id="competitorsList">
               <div class="competitor-input input-group mb-2">
-                <input type="text" class="form-control" placeholder="e.g., Microsoft" required>
+                <input type="text" class="form-control" placeholder="e.g., TCS" required>
                 <button type="button" class="btn btn-outline-danger remove-competitor" title="Remove Competitor"><i class="bi bi-trash"></i></button>
               </div>
             </div>
@@ -238,30 +238,28 @@
           const data = await response.json();
           updateProgress(100, 'Research complete!', true, 'bg-success'); // Mark as complete with success color
 
-          // Display the received results
+          
           displayResults(data.results);
 
         } catch (error) {
-          // Handle any errors during the API call or processing
+          
           console.error('Client-side Error:', error);
           alert('An error occurred during research: ' + error.message);
           // Display error message in the table
           resultsTableBody.innerHTML = `<tr><td colspan="8" class="text-center text-danger py-4"><strong>Research failed:</strong> ${error.message}</td></tr>`;
-          resultsContainer.classList.remove('d-none'); // Ensure container is visible for error
-          // Update progress bar to show error state
+          resultsContainer.classList.remove('d-none');
           updateProgress(100, 'Error Occurred', true, 'bg-danger');
 
         } finally {
           // This block runs regardless of success or error
           setLoadingState(false); // Reset button state
-           // Hide progress bar after a delay (e.g., 3 seconds)
+           
            setTimeout(() => {
               progressContainer.classList.add('d-none');
-              // Optionally reset progress bar visuals fully here if needed
-              // updateProgress(0, '', false);
+              
            }, 3000);
         }
-      }); // End form submit listener
+      }); 
 
 
        /**
@@ -276,8 +274,8 @@
            progressBar.textContent = text;
            progressBar.setAttribute('aria-valuenow', percentage);
 
-           // Manage animation and color classes
-           progressBar.classList.remove('bg-info', 'bg-success', 'bg-danger'); // Remove previous colors
+           
+           progressBar.classList.remove('bg-info', 'bg-success', 'bg-danger'); 
            if (colorClass) {
                progressBar.classList.add(colorClass);
            }
@@ -294,24 +292,22 @@
        */
       function setLoadingState(isLoading) {
         if (isLoading) {
-          startResearchBtn.disabled = true; // Disable button
-          searchButtonText.textContent = 'Researching...'; // Change text
-          searchSpinner.classList.remove('d-none'); // Show spinner
+          startResearchBtn.disabled = true; 
+          searchButtonText.textContent = 'Researching...'; 
+          searchSpinner.classList.remove('d-none'); 
         } else {
-          startResearchBtn.disabled = false; // Enable button
-          searchButtonText.textContent = 'Start Research'; // Restore text
-          searchSpinner.classList.add('d-none'); // Hide spinner
+          startResearchBtn.disabled = false; 
+          searchButtonText.textContent = 'Start Research'; 
+          searchSpinner.classList.add('d-none');
         }
       }
 
       /**
-       * Renders the research results into the HTML table.
        * @param {Array} results - An array of result objects from the backend.
        */
       function displayResults(results) {
-         resultsTableBody.innerHTML = ''; // Clear previous content (like "loading" or old results)
+         resultsTableBody.innerHTML = ''; 
 
-        // Handle case where no results are found
         if (!results || results.length === 0) {
           resultsTableBody.innerHTML = '<tr><td colspan="8" class="text-center text-muted py-4">No collaborations found based on the current criteria.</td></tr>';
           resultsContainer.classList.remove('d-none'); // Show table container
@@ -319,10 +315,9 @@
           return;
         }
 
-        // Populate table rows with results data
+        
          results.forEach(result => {
              const row = document.createElement('tr');
-             // Safely access nested evidence data
              const primaryEvidence = result.evidenceLinks && result.evidenceLinks[0] ? result.evidenceLinks[0] : {};
 
              // Determine badge class based on impact level
@@ -330,11 +325,10 @@
             if (result.impactLevel?.toLowerCase() === 'medium') badgeClass = 'bg-warning text-dark';
             else if (result.impactLevel?.toLowerCase() === 'high') badgeClass = 'bg-danger';
 
-             // Sanitize potentially unsafe content before inserting (basic example)
              const sanitize = (str) => {
                  const temp = document.createElement('div');
-                 temp.textContent = str || ''; // Use textContent to prevent HTML injection
-                 return temp.innerHTML; // Return the HTML-safe string
+                 temp.textContent = str || ''; 
+                 return temp.innerHTML;
              }
 
              // Construct table row HTML
@@ -355,23 +349,19 @@
                  </td>
                  <td class="notes-cell">${sanitize(result.notes)}</td>
              `;
-             resultsTableBody.appendChild(row); // Add the row to the table body
+             resultsTableBody.appendChild(row); 
          });
 
-         resultsContainer.classList.remove('d-none'); // Make the results container visible
-         exportButton.disabled = false; // Enable the export button
+         resultsContainer.classList.remove('d-none'); 
+         exportButton.disabled = false; 
       }
 
-
-      // Export button listener - triggers download via backend endpoint
       exportButton.addEventListener('click', function() {
-        // Simple navigation to the export endpoint triggers the download
-        // Note: The backend /api/export endpoint needs to be fully implemented
-        // to generate and send the CSV data based on the last research results.
+        
         window.location.href = '/api/export';
       });
 
-    }); // End DOMContentLoaded listener
+    });
   </script>
 </body>
 </html>
