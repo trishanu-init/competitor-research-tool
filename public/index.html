@@ -59,11 +59,9 @@
           <div class="mt-3">
             <label class="form-label fw-medium">Search Sources</label>
             <div class="row row-cols-2 row-cols-sm-3 row-cols-lg-5 g-2">
-              <div class="col"><div class="form-check form-switch"><input class="form-check-input" type="checkbox" id="sourceNews" checked><label class="form-check-label" for="sourceNews">News</label></div></div>
-              <div class="col"><div class="form-check form-switch"><input class="form-check-input" type="checkbox" id="sourcePressReleases" checked><label class="form-check-label" for="sourcePressReleases">Press Releases</label></div></div>
-              <div class="col"><div class="form-check form-switch"><input class="form-check-input" type="checkbox" id="sourceFinancialFilings" checked><label class="form-check-label" for="sourceFinancialFilings">Financial Filings</label></div></div>
-              <div class="col"><div class="form-check form-switch"><input class="form-check-input" type="checkbox" id="sourcePatents" checked><label class="form-check-label" for="sourcePatents">Patents</label></div></div>
-              <div class="col"><div class="form-check form-switch"><input class="form-check-input" type="checkbox" id="sourceSocialMedia" checked><label class="form-check-label" for="sourceSocialMedia">Social Media</label></div></div>
+              <div class="col"><div class="form-check form-switch"><input class="form-check-input" type="checkbox" id="gNewsRecent" checked><label class="form-check-label" for="sourceNews">Google News(Recent)</label></div></div>
+              <div class="col"><div class="form-check form-switch"><input class="form-check-input" type="checkbox" id="gNewsAlltime" checked><label class="form-check-label" for="sourceNews">Google News (All Time)</label></div></div>
+              <div class="col"><div class="form-check form-switch"><input class="form-check-input" type="checkbox" id="yahoofin" checked><label class="form-check-label" for="sourceNews">Yahoo Finance</label></div></div>
             </div>
           </div>
 
@@ -190,11 +188,10 @@
 
         // Gather selected search sources
         const sources = {
-          news: document.getElementById('sourceNews').checked,
-          pressReleases: document.getElementById('sourcePressReleases').checked,
-          financialFilings: document.getElementById('sourceFinancialFilings').checked,
-          patents: document.getElementById('sourcePatents').checked,
-          socialMedia: document.getElementById('sourceSocialMedia').checked
+          gnews: document.getElementById('gNewsRecent').checked,
+          gnewsRss: document.getElementById('gNewsAlltime').checked,
+          yahooRss: document.getElementById('yahoofin').checked,
+          
         };
 
          // Basic validation

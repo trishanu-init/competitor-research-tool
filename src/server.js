@@ -1,30 +1,27 @@
-// src/server.js
 const express = require('express');
 const path = require('path');
-// Import your scraping modules from the src folder
+
 const {
   NewsScraperModule,
-  PressReleaseScraperModule,
-  FinancialFilingsScraperModule,
-  SocialMediaScraperModule
-} = require('./ScrapingModule');
+  YahooFinanceScraperModule,
+  GoogleRSSNews, // Import the new GoogleRSSNews module
+  // Add other modules here if you create them
+} = require('./ScrapingModule'); // Ensure the path is correct
 
 const app = express();
-const port = 3000; // Choose a port for your server
+const port = 3000;
 
-// Middleware to parse JSON request bodies
 app.use(express.json());
 
-// Serve static files from the 'public' directory
-// This tells Express to look for static files (like index.html, CSS, JS)
-// in the directory one level up from 'src' and then into 'public'.
+
 app.use(express.static(path.join(__dirname, '../public')));
 
 // Initialize scraper modules
-const newsScraper = new NewsScraperModule();
-const pressReleaseScraper = new PressReleaseScraperModule();
-const financialFilingsScraper = new FinancialFilingsScraperModule();
-// const socialMediaScraper = new SocialMediaScraperModule();
+const newsScraper = new NewsScraperModule(); // For web scraping (Google News Search, Yahoo Finance Search, MarketWatch)
+const yahooRss = new YahooFinanceScraperModule(); // For Yahoo Finance RSS
+const googleRss = new GoogleRSSNews(); // For Google News RSS
+
+let lastResearchResults = [];
 
 // API endpoint for research
 app.post('/api/research', async (req, res) => {
@@ -33,7 +30,7 @@ app.post('/api/research', async (req, res) => {
     targetCompany,
     competitors,
     customerCompany, // Optional
-    sources // Assuming frontend sends selected sources
+    sources // Receive the sources object from the frontend
   } = req.body;
 
   if (!targetCompany || !competitors || !Array.isArray(competitors) || competitors.length === 0) {
@@ -44,109 +41,96 @@ app.post('/api/research', async (req, res) => {
 
   let allResults = [];
 
-  // Iterate through competitors and selected sources
   for (const competitor of competitors) {
     console.log(`Researching collaboration between ${targetCompany} and ${competitor}`);
 
-    // You would typically check the 'sources' object here to decide which scrapers to run
-    // For simplicity, this example runs all available scrapers for each competitor.
-    // You can add conditional logic based on the 'sources' object received from the frontend.
-
     try {
-      // Search News
-      const newsArticles = await newsScraper.searchAllNewsSources(targetCompany, competitor);
-      // Process newsArticles and add to allResults
-      const processedNews = newsArticles.map(article => ({
-        targetCompany: targetCompany,
-        competitor: competitor,
-        collaborationType: 'Potential Partnership/Collaboration', // Or analyze content for specific type
-        impactLevel: 'Medium', // Needs analysis
-        sourceType: 'News Article',
-        evidenceLinks: [{
-          url: article.url,
-          title: article.title,
-          source: article.source,
-          date: article.date
-        }],
-        notes: `Found in news: "${article.snippet}"` // Use snippet or fetch full content
-      }));
-      allResults = allResults.concat(processedNews);
-
-
-      // Search Press Releases
-      const pressReleases = await pressReleaseScraper.searchAllPressReleaseSources(targetCompany, competitor);
-      // Process pressReleases and add to allResults
-      const processedReleases = pressReleases.map(release => ({
-        targetCompany: targetCompany,
-        competitor: competitor,
-        collaborationType: 'Official Announcement', // Press releases are often official
-        impactLevel: 'High', // Press releases usually indicate significant events
-        sourceType: 'Press Release',
-        evidenceLinks: [{
-          url: release.url,
-          title: release.title,
-          source: release.source,
-          date: release.date
-        }],
-        notes: `Found in press release: "${release.title}"` // Use title or fetch full content
-      }));
-      allResults = allResults.concat(processedReleases);
-
-
-      // Search Financial Filings (requires CIK lookup and content fetching/analysis)
-      // This is a more complex process as implemented in your module.
-      // The searchFinancialFilings function already returns structured data.
-      const financialFilings = await financialFilingsScraper.searchFinancialFilings(targetCompany, competitor);
-      // Add financialFilings directly to results as they are already processed
-      allResults = allResults.concat(financialFilings.map(filing => ({
-          targetCompany: filing.targetCompany,
-          competitor: filing.competitor,
-          collaborationType: 'Regulatory Disclosure',
-          impactLevel: 'High', // Filings are official and legally binding
-          sourceType: 'Financial Filing (SEC)',
+      // Conditionally call scraper modules based on selected sources
+      if (sources.gnews) { // Check if Google News (Recent/Web) is selected
+        console.log(`Searching Google News (Web) for ${targetCompany} and ${competitor}`);
+        const newsArticles = await newsScraper.searchAllNewsSources(targetCompany, competitor);
+        const processedNews = newsArticles.map(article => ({
+          targetCompany: targetCompany,
+          competitor: competitor,
+          collaborationType: 'Potential Partnership/Collaboration',
+          impactLevel: 'Medium', // Default or determine based on content
+          sourceType: article.source, // Use the source name from the module
           evidenceLinks: [{
-              url: filing.url, // Link to index page
-              title: filing.documentType + ' Filing',
-              source: 'SEC EDGAR',
-              date: filing.documentDate
+            url: article.link,
+            title: article.title,
+            source: article.source,
+            date: article.date
           }],
-          notes: `Found in filing (${filing.documentType}): ${filing.snippets.join('... ')}` // Join snippets
-      })));
+          notes: `Found in ${article.source}: "${article.snippet}"` // Include source in notes
+        }));
+        allResults = allResults.concat(processedNews);
+      } else {
+          console.log(`Google News (Web) source not selected.`);
+      }
 
 
-    //   // Search Social Media (unreliable, handle potential errors)
-    //    try {
-    //        const socialPosts = await socialMediaScraper.searchSocialMedia(targetCompany, competitor);
-    //         // Process socialPosts and add to allResults
-    //         const processedPosts = socialPosts.map(post => ({
-    //             targetCompany: targetCompany,
-    //             competitor: competitor,
-    //             collaborationType: 'Social Media Mention', // Less formal
-    //             impactLevel: 'Low', // Usually less impactful than official sources
-    //             sourceType: 'Social Media',
-    //              evidenceLinks: [{
-    //                 url: post.url,
-    //                 title: post.text.substring(0, 100) + '...', // Use snippet of text as title
-    //                 source: post.source,
-    //                 date: post.date
-    //             }],
-    //             notes: `Found on ${post.source}: "${post.text}" by ${post.user}`
-    //         }));
-    //         allResults = allResults.concat(processedPosts);
-    //    } catch (socialError) {
-    //        console.warn(`Social media scraping failed for ${competitor}: ${socialError.message}`);
-    //        // Continue without social media results for this competitor
-    //    }
+      if (sources.yahooRss) { // Check if Yahoo Finance RSS is selected
+        console.log(`Workspaceing Yahoo Finance RSS for ${targetCompany} and ${competitor}`);
+        const yahooNewsArticles = await yahooRss.fetchNews(targetCompany, competitor);
+        const processedYahooNews = yahooNewsArticles.map(article => ({
+           targetCompany: targetCompany,
+           competitor: competitor,
+           collaborationType: 'Potential Partnership/Collaboration',
+           impactLevel: 'Medium', // Default or determine based on content
+           sourceType: article.source, // Specify source type
+           evidenceLinks: [{
+             url: article.link,
+             title: article.title,
+             source: article.source,
+             date: article.date
+           }],
+           notes: `Found in ${article.source} title: "${article.title}"` // Note based on available info
+        }));
+        allResults = allResults.concat(processedYahooNews);
+      } else {
+          console.log(`Yahoo Finance RSS source not selected.`);
+      }
+
+      if (sources.gnewsRss) { // Check if Google News (All Time/RSS) is selected
+        console.log(`Workspaceing Google News RSS for ${targetCompany} and ${competitor}`);
+        // Construct the Google News RSS URL dynamically for the query
+        const googleNewsRssUrl = `https://news.google.com/rss/search?hl=en-US&gl=US&ceid=US%3Aen&oc=11&q=%22${encodeURIComponent(targetCompany)}%22%20AND%20%22${encodeURIComponent(competitor)}%22`;
+        const googleRssArticles = await googleRss.fetchNews(googleNewsRssUrl, targetCompany, competitor);
+        const processedGoogleRssNews = googleRssArticles.map(article => ({
+            targetCompany: targetCompany,
+            competitor: competitor,
+            collaborationType: 'Potential Partnership/Collaboration',
+            impactLevel: 'Medium', // Default or determine based on content
+            sourceType: article.source, // Specify source type
+            evidenceLinks: [{
+                url: article.link,
+                title: article.title,
+                source: article.source,
+                date: article.date
+            }],
+            notes: `Found in ${article.source}: "${article.snippet}"` // Use snippet from Google RSS
+        }));
+        allResults = allResults.concat(processedGoogleRssNews);
+      } else {
+          console.log(`Google News (All Time/RSS) source not selected.`);
+      }
 
 
-      // Add delays between scraper calls for politeness and to avoid rate limits
-      await new Promise(resolve => setTimeout(resolve, 5000)); // Wait 5 seconds between competitors/sources
+      // Add search from other modules here if needed
+
+      // Add a delay to avoid overwhelming sources
+      await new Promise(resolve => setTimeout(resolve, 3000 + Math.random() * 2000));
+
 
     } catch (error) {
       console.error(`Error during research for ${targetCompany} and ${competitor}: ${error.message}`);
-      // Continue to the next competitor even if one fails
+      // Continue to the next competitor
     }
   }
+
+  // Store the results for export
+  lastResearchResults = allResults;
+  console.log(`Research complete. Found ${allResults.length} results.`);
 
 
   // Send the results back to the frontend
@@ -155,22 +139,65 @@ app.post('/api/research', async (req, res) => {
   });
 });
 
-// Simple endpoint to demonstrate export (in a real app, you'd generate CSV here)
+// API endpoint to generate and download CSV
 app.get('/api/export', (req, res) => {
-    // In a real application, you would store the research results server-side
-    // and generate a CSV file here based on the last research query.
-    // For this example, we'll just send a placeholder message or a simple dummy CSV.
-    console.log('Export endpoint called. (CSV generation not fully implemented)');
-    res.status(501).send('CSV Export Not Fully Implemented Yet');
-    // To implement:
-    // 1. Store results of the last research POST request server-side (e.g., in a variable or temporary file).
-    // 2. On a GET to /api/export, format those results as CSV.
-    // 3. Set headers: res.setHeader('Content-Type', 'text/csv'); res.setHeader('Content-Disposition', 'attachment; filename="research_results.csv"');
-    // 4. Send the CSV data: res.send(csvData);
+  console.log('Export endpoint called.');
+
+  if (!lastResearchResults || lastResearchResults.length === 0) {
+    console.log('No data available for export.');
+    return res.status(404).send('No research data available to export. Please perform a search first.');
+  }
+
+
+  const csvHeaders = ["Target", "Competitor", "Type", "Impact", "Source", "Evidence Date", "Link"];
+
+
+  const csvRows = lastResearchResults.map(result => {
+
+    const evidence = result.evidenceLinks && result.evidenceLinks.length > 0 ? result.evidenceLinks[0] : {};
+
+
+    const escapeCsvField = (field) => {
+        if (field === null || field === undefined) {
+            return '';
+        }
+        let stringField = String(field);
+
+        if (stringField.includes(',') || stringField.includes('"') || stringField.includes('\n')) {
+            // Escape double quotes
+            stringField = stringField.replace(/"/g, '""');
+
+            return `"${stringField}"`;
+        }
+        return stringField;
+    };
+
+
+    return [
+      escapeCsvField(result.targetCompany),
+      escapeCsvField(result.competitor),
+      escapeCsvField(result.collaborationType),
+      escapeCsvField(result.impactLevel),
+      escapeCsvField(evidence.source),
+      escapeCsvField(evidence.date),
+      escapeCsvField(evidence.url)
+    ].join(',');
+  });
+
+
+  const csvString = [csvHeaders.join(','), ...csvRows].join('\n');
+
+
+  res.setHeader('Content-Type', 'text/csv');
+  res.setHeader('Content-Disposition', 'attachment; filename="research_results.csv"');
+
+
+  res.send(csvString);
+  console.log('CSV file generated and sent.');
 });
 
 
-// Start the server
+
 app.listen(port, () => {
   console.log(`Backend server listening at http://localhost:${port}`);
   console.log(`Open your index.html file in a browser by navigating to http://localhost:${port}/`); // index.html is the default file in the static directory
