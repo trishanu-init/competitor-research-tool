@@ -1,0 +1,8 @@
+version: '3.8'
+
+services:
+  web:
+    image: trishanu8295/comp-research:0.0.1.RELEASE
+    ports:
+      - "3000:3000"
+    restart: unless-stopped
