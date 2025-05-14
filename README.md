@@ -18,11 +18,11 @@ docker login
 ```bash
 docker pull trishanu8295/comp-research:0.0.1.RELEASE
 ```
-3. Run docker comtainer in detached mode on port 3000
+3.Run docker comtainer in detached mode on port 3000
 ```bash
 docker run -d -p 3000:300 trishanu8295/comp-research:0.0.1.RELEASE
 ```
-4. Navigate ti http://localhost:3000
+4.Navigate to  http://localhost:3000
    
 ## How to Run Script Locally
 
