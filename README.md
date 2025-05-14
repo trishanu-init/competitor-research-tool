@@ -9,7 +9,22 @@ Before approaching ‘A’, your customer wants to find out which of their compe
 This information will help them find what kind of projects ‘A’ has done already with similar solution providers, and they will use this intel to do target them in a personalised way.
 
 ---
-## How to Run Script
+## How to Run Script using Docker
+1.Login to docker
+```bash
+docker login
+```
+2.Pull docker file from docker hub
+```bash
+docker pull trishanu8295/comp-research:0.0.1.RELEASE
+```
+3. Run docker comtainer in detached mode on port 3000
+```bash
+docker run -d -p 3000:300 trishanu8295/comp-research:0.0.1.RELEASE
+```
+4. Navigate ti http://localhost:3000
+   
+## How to Run Script Locally
 
 1. Fork the repo.
 
